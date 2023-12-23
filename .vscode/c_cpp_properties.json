@@ -24,6 +24,11 @@
                 "C:\\Users\\KennyNeutron\\Documents\\Arduino\\libraries\\Adafruit_BusIO",
                 "C:\\Users\\KennyNeutron\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\libraries\\SPI\\src",
                 "C:\\Users\\KennyNeutron\\Documents\\Arduino\\libraries\\Adafruit_Unified_Sensor",
+                "C:\\Users\\KennyNeutron\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\libraries\\EEPROM\\src",
+                "C:\\Users\\KennyNeutron\\Documents\\Arduino\\libraries\\GravityTDS",
+                "C:\\Users\\KennyNeutron\\Documents\\Arduino\\libraries\\PH4502C-Sensor\\src",
+                "C:\\Users\\KennyNeutron\\Documents\\Arduino\\libraries\\OneWire-2.3.7",
+                "C:\\Users\\KennyNeutron\\Documents\\Arduino\\libraries\\DallasTemperature",
                 "c:\\users\\kennyneutron\\appdata\\local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\lib\\gcc\\avr\\7.3.0\\include",
                 "c:\\users\\kennyneutron\\appdata\\local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\lib\\gcc\\avr\\7.3.0\\include-fixed",
                 "c:\\users\\kennyneutron\\appdata\\local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\avr\\include"
