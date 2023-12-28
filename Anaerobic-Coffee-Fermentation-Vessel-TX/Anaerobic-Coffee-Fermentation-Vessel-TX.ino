@@ -20,46 +20,28 @@ Date Finished:
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SPI.h>
-#include "RF24.h"
+#include <nRF24L01.h>
+#include <RF24.h>
 
+#include "SensorParameters.h"
 
-#define TdsSensorPin A0
-
-// Define the pH level pin and temperature pin
-#define PH4502C_PH_LEVEL_PIN A1
-#define PH4502C_TEMP_PIN A2
-
-#define ONE_WIRE_BUS 5
-
-
-// Create an instance of the PH4502C_Sensor
-PH4502C_Sensor ph4502(PH4502C_PH_LEVEL_PIN, PH4502C_TEMP_PIN);
-GravityTDS gravityTds;
-
-float tdsValue = 0;
-
-SHTSensor m5(SHTSensor::SHT3X);
-
-Adafruit_AHTX0 aht20;
-
-OneWire oneWire(ONE_WIRE_BUS);
-
-// Pass oneWire reference to DallasTemperature library
-DallasTemperature dallas_sensors(&oneWire);
-
-
-RF24 myRadio(9, 10);  //CE CSN
-byte addresses[][6] = { "C0F33" };
+RF24 nrf24(9, 10);  //CE CSN
+byte address[6] = "C0F33";
 
 struct payload {
-  int id = 1;
-  float temp = 18.3;
-  char text[100] = "Text to be transmitted";
+  uint8_t data_id;
+  float paraData = 0.0;
 };
 
-typedef struct payload Payload;
+payload data;
 
-Payload data;
+#define id_SurfaceTemperature 0x01
+#define id_m5Humidity 0x02
+#define id_m5Temperature 0x03
+#define id_aht20Humidity 0x04
+#define id_aht20Temperature 0x05
+#define id_tdsValue 0x06
+#define id_pH4052C 0x07
 
 void setup() {
   Serial.begin(115200);
@@ -86,100 +68,100 @@ void setup() {
 
   dallas_sensors.begin();  // Start up the library
 
-  myRadio.begin();
-  //myRadio.setChannel(115);
-  myRadio.setDataRate(RF24_250KBPS);
-  myRadio.openWritingPipe(addresses[0]);
+  nrf24.begin();
+  nrf24.setPALevel(RF24_PA_MAX);
+  //nrf24.setChannel(115);
+  nrf24.setDataRate(RF24_250KBPS);
+  nrf24.openWritingPipe(address);
 }
 
 
 void loop() {
   // put your main code here, to run repeatedly:
   // read from first sensor
-  Serial.print("\n\n\n############################################\n\n\n");
+  Serial.println("\n\n\n############################################");
 
-  Serial.println("================================================");
-  Serial.println("Surface Temperature Sensor:");
-  dallas_sensors.requestTemperatures();
+  //printData_SurfaceTemp();
 
-  //print the temperature in Celsius
-  Serial.print("Temperature: ");
-  Serial.print(dallas_sensors.getTempCByIndex(0));
-  Serial.print((char)176);  //shows degrees character
-  Serial.print("C  |  ");
+  //printData_m5();
 
-  //print the temperature in Fahrenheit
-  Serial.print((dallas_sensors.getTempCByIndex(0) * 9.0) / 5.0 + 32.0);
-  Serial.print((char)176);  //shows degrees character
-  Serial.println("F");
-  Serial.println("================================================");
-
-  if (m5.readSample()) {
-    Serial.println("================================================");
-    Serial.println("M5 Sensor:");
-    Serial.print("  RH: ");
-    Serial.println(m5.getHumidity(), 2);
-    Serial.print("  T:  ");
-    Serial.println(m5.getTemperature(), 2);
-    Serial.println("================================================");
-  } else {
-    Serial.println("================================================");
-    Serial.println("M5 Sensor: Error in readSample()");
-    Serial.println("================================================");
-  }
-
-  sensors_event_t aht20_humidity, aht20_temp;
   aht20.getEvent(&aht20_humidity, &aht20_temp);  // populate temp and humidity objects with fresh data
-  Serial.print("\n\n\n");
-  Serial.println("================================================");
-  Serial.println("AHT20 Sensor:");
-  Serial.print("Temperature: ");
-  Serial.print(aht20_temp.temperature);
-  Serial.println(" C");
-  Serial.print("Humidity: ");
-  Serial.print(aht20_humidity.relative_humidity);
-  Serial.println("% rH");
-  Serial.println("================================================");
+  //printData_AHT20();
 
-  Serial.print("\n\n\n");
-  Serial.println("================================================");
-  Serial.println("TDS Sensor:");
-  gravityTds.setTemperature(dallas_sensors.getTempCByIndex(0));  // set the temperature and execute temperature compensation
-  gravityTds.update();                                           //sample and calculate
-  tdsValue = gravityTds.getTdsValue();                           // then get the value
-  Serial.print(tdsValue, 0);
-  Serial.println("ppm");
-  Serial.println("================================================");
+  //printData_TDS();
 
-  Serial.print("\n\n\n");
-  Serial.println("================================================");
-  Serial.println("pH4052C Sensor:");
-  // Read the temperature from the sensor
-  //Serial.println("Temperature reading:"
-  //               + String(ph4502.read_temp()));
+  //printData_pH4052C();
 
-  // Read the pH level by average
-  Serial.println("pH Level Reading: "
-                 + String(ph4502.read_ph_level()));
+  nrf_mngr();
 
-  // Read a single pH level value
-  //Serial.println("pH Level Single Reading: "
-  //               + String(ph4502.read_ph_level_single()));
-  Serial.println("================================================");
+  Serial.print("############################################");
 
-
-
-  Serial.print("\n\n\n############################################");
-
-
-  myRadio.write(&data, sizeof(data));
-  Serial.println("\nPackage:");
-  Serial.println(data.id);
-  Serial.println(data.temp);
-  Serial.println(data.text);
-  data.id = data.id + 1;
-  data.temp = data.temp + 0.1;
 
 
   delay(1000);
+}
+
+
+void nrf_mngr() {
+
+  Serial.println("NRF Send Payload: ");
+  Serial.print("[Surface Temperature= ");
+  Serial.print(dallas_sensors.getTempCByIndex(0));  //Degree Celcius
+  Serial.println("]");
+  nrf_encrypt(id_SurfaceTemperature, dallas_sensors.getTempCByIndex(0));
+  delay(6);
+
+  Serial.print("[m5 Humidity= ");
+  Serial.print(m5.getHumidity());  //%
+  Serial.println("]");
+  nrf_encrypt(id_m5Humidity, m5.getHumidity());
+  delay(6);
+
+  Serial.print("[m5 Temperature= ");
+  Serial.print(m5.getTemperature());  //Degree Celcius
+  Serial.println("]");
+  nrf_encrypt(id_m5Temperature, m5.getTemperature());
+  delay(6);
+
+  Serial.print("[aht20 Humidity= ");
+  Serial.print(aht20_humidity.relative_humidity);  //%
+  Serial.println("]");
+  nrf_encrypt(id_aht20Humidity, aht20_humidity.relative_humidity);
+  delay(6);
+
+  Serial.print("[aht20 Temperature= ");
+  Serial.print(aht20_temp.temperature);  //Degree Celcius
+  Serial.println("]");
+  nrf_encrypt(id_aht20Temperature, aht20_temp.temperature);
+  delay(6);
+
+  gravityTds.setTemperature(dallas_sensors.getTempCByIndex(0));  // set the temperature and execute temperature compensation
+  gravityTds.update();                                           //sample and calculate
+  Serial.print("[TDS Value= ");
+  Serial.print(gravityTds.getTdsValue());  //ppm
+  Serial.println("]");
+  nrf_encrypt(id_tdsValue, gravityTds.getTdsValue());
+  delay(6);
+
+  Serial.print("[pH= ");
+  Serial.print(ph4502.read_ph_level());  //pH
+  Serial.println("]");
+  nrf_encrypt(id_pH4052C, ph4502.read_ph_level());
+  delay(6);
+}
+
+
+void nrf_encrypt(uint8_t id, float dataVal) {
+  data.data_id = id;
+  data.paraData = dataVal;
+  nrf24.write(&data, sizeof(payload));
+  Serial.println("Package:");
+  if (data.data_id <= 0x0F) {
+    Serial.print("0x0");
+    Serial.println(data.data_id, HEX);
+  } else {
+    Serial.print("0x");
+    Serial.println(data.data_id, HEX);
+  }
+  Serial.println(data.paraData);
 }
