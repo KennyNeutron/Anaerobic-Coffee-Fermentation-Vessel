@@ -19,6 +19,9 @@ Date Finished:
 #include <ph4502c_sensor.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <SPI.h>
+#include "RF24.h"
+
 
 #define TdsSensorPin A0
 
@@ -44,6 +47,20 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass oneWire reference to DallasTemperature library
 DallasTemperature dallas_sensors(&oneWire);
 
+
+RF24 myRadio(9, 10);  //CE CSN
+byte addresses[][6] = { "C0F33" };
+
+struct payload {
+  int id = 1;
+  float temp = 18.3;
+  char text[100] = "Text to be transmitted";
+};
+
+typedef struct payload Payload;
+
+Payload data;
+
 void setup() {
   Serial.begin(115200);
   Serial.println("\nAnaerobic Coffee Fermentation Vessel \n\n\nSYSTEM STARTING...");
@@ -68,6 +85,11 @@ void setup() {
   ph4502.init();
 
   dallas_sensors.begin();  // Start up the library
+
+  myRadio.begin();
+  //myRadio.setChannel(115);
+  myRadio.setDataRate(RF24_250KBPS);
+  myRadio.openWritingPipe(addresses[0]);
 }
 
 
@@ -123,8 +145,8 @@ void loop() {
   Serial.println("================================================");
   Serial.println("TDS Sensor:");
   gravityTds.setTemperature(dallas_sensors.getTempCByIndex(0));  // set the temperature and execute temperature compensation
-  gravityTds.update();                                //sample and calculate
-  tdsValue = gravityTds.getTdsValue();                // then get the value
+  gravityTds.update();                                           //sample and calculate
+  tdsValue = gravityTds.getTdsValue();                           // then get the value
   Serial.print(tdsValue, 0);
   Serial.println("ppm");
   Serial.println("================================================");
@@ -148,6 +170,16 @@ void loop() {
 
 
   Serial.print("\n\n\n############################################");
+
+
+  myRadio.write(&data, sizeof(data));
+  Serial.println("\nPackage:");
+  Serial.println(data.id);
+  Serial.println(data.temp);
+  Serial.println(data.text);
+  data.id = data.id + 1;
+  data.temp = data.temp + 0.1;
+
 
   delay(1000);
 }
