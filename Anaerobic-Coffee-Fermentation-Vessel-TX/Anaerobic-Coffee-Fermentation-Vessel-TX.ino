@@ -81,7 +81,7 @@ void loop() {
   // read from first sensor
   Serial.println("\n\n\n############################################");
 
-  //printData_SurfaceTemp();
+  printData_SurfaceTemp();
 
   //printData_m5();
 
