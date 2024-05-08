@@ -1,14 +1,14 @@
 /*
-Development of Anaerobic Coffee Fermentation Vessel
+  Development of Anaerobic Coffee Fermentation Vessel
 
-MAIN CODE
+  MAIN CODE
 
-Environment: ATMEGA328P-AU
+  Environment: ATMEGA328P-AU
 
-by: Kenny Neutron
+  by: Kenny Neutron
 
-Date Started: 12-23-2023
-Date Finished:
+  Date Started: 12-23-2023
+  Date Finished:
 
 */
 #include <Wire.h>
@@ -35,7 +35,7 @@ struct payload {
 
 payload data;
 
-#define id_SurfaceTemperature 0x01
+#define id_SurfaceTemperature 0x0100
 #define id_m5Humidity 0x02
 #define id_m5Temperature 0x03
 #define id_aht20Humidity 0x04
@@ -43,7 +43,14 @@ payload data;
 #define id_tdsValue 0x06
 #define id_pH4052C 0x07
 
+#define LED_green 2
+#define LED_red 3
+
 void setup() {
+  pinMode(LED_green, OUTPUT);
+  pinMode(LED_red, OUTPUT);
+  digitalWrite(LED_green, 0);
+  digitalWrite(LED_red, 0);
   Serial.begin(115200);
   Serial.println("\nAnaerobic Coffee Fermentation Vessel \n\n\nSYSTEM STARTING...");
 
@@ -68,11 +75,15 @@ void setup() {
 
   dallas_sensors.begin();  // Start up the library
 
-  nrf24.begin();
+  if (!nrf24.begin()) {
+    Serial.println(F("radio hardware is not responding!!"));
+
+  }
   nrf24.setPALevel(RF24_PA_MAX);
   //nrf24.setChannel(115);
   nrf24.setDataRate(RF24_250KBPS);
   nrf24.openWritingPipe(address);
+  nrf24.stopListening();
 }
 
 
@@ -152,6 +163,8 @@ void nrf_mngr() {
 
 
 void nrf_encrypt(uint8_t id, float dataVal) {
+
+  digitalWrite(LED_green, 1);
   data.data_id = id;
   data.paraData = dataVal;
   nrf24.write(&data, sizeof(payload));
@@ -164,4 +177,8 @@ void nrf_encrypt(uint8_t id, float dataVal) {
     Serial.println(data.data_id, HEX);
   }
   Serial.println(data.paraData);
+
+  Serial.println("NRF SENT DATA");
+
+  digitalWrite(LED_green, 0);
 }

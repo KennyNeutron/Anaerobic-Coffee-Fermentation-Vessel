@@ -21,7 +21,7 @@
 #include <SPI.h>
 #include <SD.h>  // SD Card Library
 
-#include <nRF24L01.h>
+//#include <nRF24L01.h>
 #include <RF24.h>
 #include "DigitalIO.h"
 
@@ -38,7 +38,7 @@ DS3231 myRTC;
 
 #define TCS_PIN 53
 
-XPT2046_Touchscreen ts(TCS_PIN);
+XPT2046_Touchscreen ts(TCS_PIN); 
 //#define TIRQ_PIN 44
 //XPT2046_Touchscreen ts(CS_PIN);  // Param 2 - NULL - No interrupts
 //XPT2046_Touchscreen ts(CS_PIN, 255);  // Param 2 - 255 - No interrupts
@@ -112,13 +112,14 @@ void setup() {
   delay(1000);
 
   Wire.begin();
-
-
+  
   //SET DATE & TIME
   //DS3231_setTime(13, 53, 0, 12, 29, 23);  //Hour-Minute-Second-Month-Date-Year (24HR FORMAT)
 
+  if (!nrf.begin()) {
+    Serial.println(F("radio hardware is not responding!!"));
 
-  nrf.begin();
+  }
   //nrf.setChannel(115);
   nrf.setPALevel(RF24_PA_MAX);
   nrf.setDataRate(RF24_250KBPS);
@@ -142,16 +143,16 @@ void setup() {
     tft.Print_String("SD Card Init fail!", 0, 0);
   }
   /*
-  tft.Fill_Screen(RED);
-  tft.Fill_Screen(GREEN);
-  tft.Fill_Screen(BLUE);
+    tft.Fill_Screen(RED);
+    tft.Fill_Screen(GREEN);
+    tft.Fill_Screen(BLUE);
 
-  disp_LoadingScreen();
+    disp_LoadingScreen();
 
-  Serial.println("DS3231 Time: " + DS3231_getTimeString());
-  Serial.println("DS3231 Date: " + DS3231_getDateString());
+    Serial.println("DS3231 Time: " + DS3231_getTimeString());
+    Serial.println("DS3231 Date: " + DS3231_getDateString());
 
-  delay(3000);
+    delay(3000);
   */
   tft.Fill_Screen(BLACK);
   display_last_millis = millis();

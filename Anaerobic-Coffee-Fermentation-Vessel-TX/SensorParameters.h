@@ -1,7 +1,7 @@
 #define TdsSensorPin A0
 
 // Define the pH level pin and temperature pin
-#define PH4502C_PH_LEVEL_PIN A1
+#define PH4502C_PH_LEVEL_PIN  
 #define PH4502C_TEMP_PIN A2
 
 #define ONE_WIRE_BUS 5
