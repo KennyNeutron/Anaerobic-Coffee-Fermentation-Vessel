@@ -25,7 +25,6 @@
 #include <RF24.h>
 #include "DigitalIO.h"
 
-
 #include <LCDWIKI_GUI.h>  //Core graphics library
 #include <LCDWIKI_KBV.h>  //Hardware-specific library
 #include <XPT2046_Touchscreen.h>
@@ -38,7 +37,7 @@ DS3231 myRTC;
 
 #define TCS_PIN 53
 
-XPT2046_Touchscreen ts(TCS_PIN); 
+XPT2046_Touchscreen ts(TCS_PIN);
 //#define TIRQ_PIN 44
 //XPT2046_Touchscreen ts(CS_PIN);  // Param 2 - NULL - No interrupts
 //XPT2046_Touchscreen ts(CS_PIN, 255);  // Param 2 - 255 - No interrupts
@@ -79,7 +78,6 @@ byte address[6] = "C0F33";
   MOSI  --> pin6
   MISO  --> pin7
 */
-
 struct payload {
   uint8_t data_id;
   float paraData = 0.0;
@@ -112,13 +110,12 @@ void setup() {
   delay(1000);
 
   Wire.begin();
-  
+
   //SET DATE & TIME
-  //DS3231_setTime(13, 53, 0, 12, 29, 23);  //Hour-Minute-Second-Month-Date-Year (24HR FORMAT)
+  //DS3231_setTime(12, 31, 0, 5, 9, 24);  //Hour-Minute-Second-Month-Date-Year (24HR FORMAT)
 
   if (!nrf.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
-
   }
   //nrf.setChannel(115);
   nrf.setPALevel(RF24_PA_MAX);
@@ -131,7 +128,6 @@ void setup() {
 
   ts.begin();
   ts.setRotation(3);
-
 
   //Init SD_Card
   pinMode(48, OUTPUT);
@@ -161,6 +157,7 @@ void setup() {
 void loop() {
 
   if (nrf.available()) {
+    Serial.println("NRF Recieved");
     while (nrf.available()) {
       nrf.read(&data, sizeof(data));
     }
@@ -182,7 +179,7 @@ void loop() {
     show_string("DATE:" + DS3231_getDateString(), 0, 30, 3, WHITE, BLACK, 0);
 
     show_string("SURFACE TEMPERATURE: ", 0, 100, 3, WHITE, BLACK, 0);
-    show_string(String(SurfaceTemperature ) + "degC", 360, 100, 3, RED, BLACK, 0);
+    show_string(String(SurfaceTemperature) + "degC", 360, 100, 3, RED, BLACK, 0);
 
     show_string("M5 Humidity: ", 0, 140, 3, WHITE, BLACK, 0);
     show_string(String(m5Humidity) + "%", 230, 140, 3, GREEN, BLACK, 0);
@@ -201,6 +198,12 @@ void loop() {
 
     show_string("pH4052C (pH): ", 0, 340, 3, WHITE, BLACK, 0);
     show_string(String(pH4052C), 250, 340, 3, YELLOW, BLACK, 0);
+
+    show_string("CO2: ", 0, 380, 3, WHITE, BLACK, 0);
+    show_string(String(CO2_val) + "ppm", 100, 380, 3, PINK, BLACK, 0);
+
+    show_string("O2: ", 0, 420, 3, WHITE, BLACK, 0);
+    show_string(String(O2_val) + "% VOL", 100, 420, 3, GREENYELLOW, BLACK, 0);
 
     display_last_millis = millis();
 
@@ -236,6 +239,8 @@ void loop() {
       dataFile.println("AHT20 Temperature: " + String(aht20Temperature) + "degC");
       dataFile.println("TDS Value: " + String(tdsValue) + "ppm");
       dataFile.println("pH4052C (pH level): " + String(pH4052C));
+      dataFile.println("CO2: " + String(CO2_val) + "ppm");
+      dataFile.println("O2: "+ String(O2_val)+"% vol");
       dataFile.println("================================================");
       dataFile.close();
       // print to the serial port too:

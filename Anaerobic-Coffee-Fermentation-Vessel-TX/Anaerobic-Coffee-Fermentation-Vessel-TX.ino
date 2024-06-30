@@ -22,8 +22,21 @@
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
-
+#include "CO2Sensor.h"
+#include "DFRobot_OxygenSensor.h"
 #include "SensorParameters.h"
+/**
+ * i2c slave Address, The default is ADDRESS_3.
+ * ADDRESS_0   0x70  i2c device address.
+ * ADDRESS_1   0x71
+ * ADDRESS_2   0x72
+ * ADDRESS_3   0x73
+ */
+#define Oxygen_IICAddress ADDRESS_3
+#define COLLECT_NUMBER 10  // collect number, the collection range is 1-100.
+DFRobot_OxygenSensor oxygen;
+
+CO2Sensor co2Sensor(A6, 0.99, 100);
 
 RF24 nrf24(9, 10);  //CE CSN
 byte address[6] = "C0F33";
@@ -35,13 +48,15 @@ struct payload {
 
 payload data;
 
-#define id_SurfaceTemperature 0x0100
+#define id_SurfaceTemperature 0x01
 #define id_m5Humidity 0x02
 #define id_m5Temperature 0x03
 #define id_aht20Humidity 0x04
 #define id_aht20Temperature 0x05
 #define id_tdsValue 0x06
 #define id_pH4052C 0x07
+#define id_CO2 0x08
+#define id_O2 0x09
 
 #define LED_green 2
 #define LED_red 3
@@ -77,13 +92,23 @@ void setup() {
 
   if (!nrf24.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
-
   }
   nrf24.setPALevel(RF24_PA_MAX);
   //nrf24.setChannel(115);
   nrf24.setDataRate(RF24_250KBPS);
   nrf24.openWritingPipe(address);
   nrf24.stopListening();
+
+
+  Serial.println("=== CO2 Initializing ===");
+  co2Sensor.calibrate();
+
+  Serial.println("=== O2 Initializing ===");
+  while (!oxygen.begin(Oxygen_IICAddress)) {
+    Serial.println("I2c device number error !");
+    delay(1000);
+  }
+  Serial.println("Device connected successfully !");
 }
 
 
@@ -158,6 +183,20 @@ void nrf_mngr() {
   Serial.print(ph4502.read_ph_level());  //pH
   Serial.println("]");
   nrf_encrypt(id_pH4052C, ph4502.read_ph_level());
+  delay(6);
+
+  int co2_val = co2Sensor.read();
+  Serial.print("[CO2=");
+  Serial.print(co2_val);
+  Serial.println("]");
+  nrf_encrypt(id_CO2, co2_val);
+  delay(6);
+
+  float oxygenData = oxygen.getOxygenData(COLLECT_NUMBER);
+  Serial.print("[O2=");
+  Serial.print(oxygenData);
+  Serial.println("]");
+  nrf_encrypt(id_O2, oxygenData);
   delay(6);
 }
 
