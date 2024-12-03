@@ -61,13 +61,36 @@ payload data;
 #define LED_green 2
 #define LED_red 3
 
+#define ThisDevice '6'
 void setup() {
+  address[4] =  ThisDevice;
   pinMode(LED_green, OUTPUT);
   pinMode(LED_red, OUTPUT);
+
+  for (int i = 0; i <= 10; i++) {
+    digitalWrite(LED_green, 1); 
+    digitalWrite(LED_red, 0);
+    delay(50);
+    digitalWrite(LED_green, 0);
+    digitalWrite(LED_red, 1);
+    delay(50);
+  }
   digitalWrite(LED_green, 0);
   digitalWrite(LED_red, 0);
+
   Serial.begin(115200);
-  Serial.println("\nAnaerobic Coffee Fermentation Vessel \n\n\nSYSTEM STARTING...");
+  Serial.println("\nAnaerobic Coffee Fermentation Vessel \nSYSTEM STARTING...\n");
+
+  if (nrf24.begin()) {
+    Serial.println(F("NRF24L01 HARDWARE DETECTED SUCCESSFULLY!"));
+  } else {
+    Serial.println(F("NRF24L01 HARDWARE NOT FOUND!"));
+  }
+  nrf24.setPALevel(RF24_PA_MAX);
+  //nrf24.setChannel(115);
+  nrf24.setDataRate(RF24_250KBPS);
+  nrf24.openWritingPipe(address);
+  nrf24.stopListening();
 
   Wire.begin();
 
@@ -76,7 +99,6 @@ void setup() {
 
   if (!aht20.begin()) {
     Serial.println("Could not find AHT? Check wiring");
-    while (1) delay(10);
   }
   Serial.println("AHT10 or AHT20 found");
 
@@ -89,16 +111,6 @@ void setup() {
   ph4502.init();
 
   dallas_sensors.begin();  // Start up the library
-
-  if (!nrf24.begin()) {
-    Serial.println(F("radio hardware is not responding!!"));
-  }
-  nrf24.setPALevel(RF24_PA_MAX);
-  //nrf24.setChannel(115);
-  nrf24.setDataRate(RF24_250KBPS);
-  nrf24.openWritingPipe(address);
-  nrf24.stopListening();
-
 
   Serial.println("=== CO2 Initializing ===");
   co2Sensor.calibrate();
@@ -132,9 +144,7 @@ void loop() {
 
   Serial.print("############################################");
 
-
-
-  delay(1000);
+  //delay(1000);
 }
 
 

@@ -104,7 +104,31 @@ bool transmitterAvailableToggle = false;
 
 bool loggingToggle = false;
 
+uint8_t currentReceiver = 1;
+uint8_t previousReceiver = 0;
+
+#define nextButton 2
+bool nextButton_status = true;
+bool nextButton_toggle = false;
+
+void next() {
+  if (!nextButton_toggle) {
+    nextButton_toggle = true;
+    currentReceiver++;
+    //Serial.println("next!");
+    if (currentReceiver >= 12) {
+      currentReceiver = 1;
+    }
+    reset_AllVariable();
+  }
+}
+
 void setup() {
+  address[4] = '0' + currentReceiver;
+
+  pinMode(nextButton, INPUT_PULLUP);
+  attachInterrupt(0, next, FALLING);
+
   Serial.begin(115200);
   Serial.println("\nAnaerobic Coffee Fermentation Vessel Receiver\n\n\nSYSTEM STARTING...");
   delay(1000);
@@ -112,7 +136,7 @@ void setup() {
   Wire.begin();
 
   //SET DATE & TIME
-  //DS3231_setTime(12, 31, 0, 5, 9, 24);  //Hour-Minute-Second-Month-Date-Year (24HR FORMAT)
+  //DS3231_setTime(20, 30, 0, 8, 21, 24);  //Hour-Minute-Second-Month-Date-Year (24HR FORMAT)
 
   if (!nrf.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
@@ -152,9 +176,27 @@ void setup() {
   */
   tft.Fill_Screen(BLACK);
   display_last_millis = millis();
+  show_string("Current Device: " + String(currentReceiver), 550, 25, 2, ORANGE, BLACK, 0);
 }
 
 void loop() {
+  if (previousReceiver != currentReceiver) {
+    previousReceiver = currentReceiver;
+    address[4] = '0' + currentReceiver;
+    nrf.stopListening();
+    nrf.setPALevel(RF24_PA_MAX);
+    nrf.setDataRate(RF24_250KBPS);
+    nrf.openReadingPipe(0, address);
+    nrf.startListening();
+    Serial.println("change add");
+    show_string("Current Device: " + String(currentReceiver) + "             ", 550, 25, 2, ORANGE, BLACK, 0);
+  }
+
+  nextButton_status = digitalRead(nextButton);
+
+  if (nextButton_status) {
+    nextButton_toggle = false;
+  }
 
   if (nrf.available()) {
     Serial.println("NRF Recieved");
@@ -179,31 +221,31 @@ void loop() {
     show_string("DATE:" + DS3231_getDateString(), 0, 30, 3, WHITE, BLACK, 0);
 
     show_string("SURFACE TEMPERATURE: ", 0, 100, 3, WHITE, BLACK, 0);
-    show_string(String(SurfaceTemperature) + "degC", 360, 100, 3, RED, BLACK, 0);
+    show_string(String(SurfaceTemperature) + "degC      ", 360, 100, 3, RED, BLACK, 0);
 
     show_string("M5 Humidity: ", 0, 140, 3, WHITE, BLACK, 0);
-    show_string(String(m5Humidity) + "%", 230, 140, 3, GREEN, BLACK, 0);
+    show_string(String(m5Humidity) + "%    ", 230, 140, 3, GREEN, BLACK, 0);
 
     show_string("M5 Temperature: ", 0, 180, 3, WHITE, BLACK, 0);
-    show_string(String(m5Temperature) + "degC", 270, 180, 3, RED, BLACK, 0);
+    show_string(String(m5Temperature) + "degC      ", 270, 180, 3, RED, BLACK, 0);
 
     show_string("AHT20 Humidity: ", 0, 220, 3, WHITE, BLACK, 0);
-    show_string(String(aht20Humidity) + "%", 270, 220, 3, GREEN, BLACK, 0);
+    show_string(String(aht20Humidity) + "%        ", 270, 220, 3, GREEN, BLACK, 0);
 
     show_string("AHT20 Temperature: ", 0, 260, 3, WHITE, BLACK, 0);
     show_string(String(aht20Temperature) + "degC", 320, 260, 3, RED, BLACK, 0);
 
     show_string("TDS Value: ", 0, 300, 3, WHITE, BLACK, 0);
-    show_string(String(tdsValue) + "ppm", 200, 300, 3, CYAN, BLACK, 0);
+    show_string(String(tdsValue) + "ppm        ", 200, 300, 3, CYAN, BLACK, 0);
 
     show_string("pH4052C (pH): ", 0, 340, 3, WHITE, BLACK, 0);
     show_string(String(pH4052C), 250, 340, 3, YELLOW, BLACK, 0);
 
     show_string("CO2: ", 0, 380, 3, WHITE, BLACK, 0);
-    show_string(String(CO2_val) + "ppm", 100, 380, 3, PINK, BLACK, 0);
+    show_string(String(CO2_val) + "ppm     ", 100, 380, 3, PINK, BLACK, 0);
 
     show_string("O2: ", 0, 420, 3, WHITE, BLACK, 0);
-    show_string(String(O2_val) + "% VOL", 100, 420, 3, GREENYELLOW, BLACK, 0);
+    show_string(String(O2_val) + "% VOL      ", 100, 420, 3, GREENYELLOW, BLACK, 0);
 
     display_last_millis = millis();
 
@@ -215,6 +257,8 @@ void loop() {
       tft.Fill_Rectangle(550, 0, 800, 15);
     }
   }
+
+
 
 
   if (myRTC.getSecond() == 0 && !loggingToggle) {
@@ -230,6 +274,7 @@ void loop() {
     // if the file is available, write to it:
     if (dataFile) {
       dataFile.println("\n\n\n================================================");
+      dataFile.println("Device ID:"+ String(currentReceiver));
       dataFile.println("DS3231 Time: " + DS3231_getTimeString());
       dataFile.println("DS3231 Date: " + DS3231_getDateString());
       dataFile.println("Surface Temperature: " + String(SurfaceTemperature) + "degC");
@@ -240,7 +285,7 @@ void loop() {
       dataFile.println("TDS Value: " + String(tdsValue) + "ppm");
       dataFile.println("pH4052C (pH level): " + String(pH4052C));
       dataFile.println("CO2: " + String(CO2_val) + "ppm");
-      dataFile.println("O2: "+ String(O2_val)+"% vol");
+      dataFile.println("O2: " + String(O2_val) + "% vol");
       dataFile.println("================================================");
       dataFile.close();
       // print to the serial port too:
