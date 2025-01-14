@@ -48,12 +48,18 @@ void printData_AHT20() {
 }
 
 void printData_TDS() {
+  // Serial.print("\n\n\n");
+  // Serial.println("================================================");
+  // Serial.println("TDS Sensor:");
+  // gravityTds.setTemperature(dallas_sensors.getTempCByIndex(0));  // set the temperature and execute temperature compensation
+  // gravityTds.update();                                           //sampMMtdsValue, 0);
+  // Serial.println("TDS Sensor:");
+  // Serial.println("ppm");
+  // Serial.println("================================================");
+
   Serial.print("\n\n\n");
   Serial.println("================================================");
-  Serial.println("TDS Sensor:");
-  gravityTds.setTemperature(dallas_sensors.getTempCByIndex(0));  // set the temperature and execute temperature compensation
-  gravityTds.update();                                           //sample and calculate
-  tdsValue = gravityTds.getTdsValue();                           // then get the value
+  Serial.println("TDS Sensor:");                          // then get the value
   Serial.print(tdsValue, 0);
   Serial.println("ppm");
   Serial.println("================================================");
@@ -75,5 +81,4 @@ void printData_pH4052C() {
   //Serial.println("pH Level Single Reading: "
   //               + String(ph4502.read_ph_level_single()));
   Serial.println("================================================");
-
 }

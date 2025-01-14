@@ -15,7 +15,6 @@
 #include "SHTSensor.h"
 #include <Adafruit_AHTX0.h>
 #include <EEPROM.h>
-#include "GravityTDS.h"
 #include <ph4502c_sensor.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -61,14 +60,14 @@ payload data;
 #define LED_green 2
 #define LED_red 3
 
-#define ThisDevice '6'
+#define ThisDevice '1'
 void setup() {
-  address[4] =  ThisDevice;
+  address[4] = ThisDevice;
   pinMode(LED_green, OUTPUT);
   pinMode(LED_red, OUTPUT);
 
   for (int i = 0; i <= 10; i++) {
-    digitalWrite(LED_green, 1); 
+    digitalWrite(LED_green, 1);
     digitalWrite(LED_red, 0);
     delay(50);
     digitalWrite(LED_green, 0);
@@ -102,10 +101,11 @@ void setup() {
   }
   Serial.println("AHT10 or AHT20 found");
 
-  gravityTds.setPin(TdsSensorPin);
-  gravityTds.setAref(5.0);       //reference voltage on ADC, default 5.0V on  Arduino UNO
-  gravityTds.setAdcRange(1024);  //1024 for 10bit ADC;4096 for 12bit ADC
-  gravityTds.begin();            //initialization
+  pinMode(TdsSensorPin, INPUT);
+  // gravityTds.setPin(TdsSensorPin);
+  // gravityTds.setAref(5.0);       //reference voltage on ADC, default 5.0V on  Arduino UNO
+  // gravityTds.setAdcRange(1024);  //1024 for 10bit ADC;4096 for 12bit ADC
+  // gravityTds.begin();            //initialization
 
   // Initialize the PH4502 instance
   ph4502.init();
@@ -129,16 +129,18 @@ void loop() {
   // read from first sensor
   Serial.println("\n\n\n############################################");
 
-  printData_SurfaceTemp();
-
-  //printData_m5();
-
-  aht20.getEvent(&aht20_humidity, &aht20_temp);  // populate temp and humidity objects with fresh data
-  //printData_AHT20();
-
+  //printData_SurfaceTemp();
   //printData_TDS();
 
-  //printData_pH4052C();
+
+  aht20.getEvent(&aht20_humidity, &aht20_temp);  // populate temp and humidity objects with fresh data
+  tds_loop();
+
+  // printData_m5();
+
+  // printData_AHT20();
+
+  // printData_pH4052C();
 
   nrf_mngr();
 
@@ -181,12 +183,14 @@ void nrf_mngr() {
   nrf_encrypt(id_aht20Temperature, aht20_temp.temperature);
   delay(6);
 
-  gravityTds.setTemperature(dallas_sensors.getTempCByIndex(0));  // set the temperature and execute temperature compensation
-  gravityTds.update();                                           //sample and calculate
+  // gravityTds.setTemperature(dallas_sensors.getTempCByIndex(0));  // set the temperature and execute temperature compensation
+  // gravityTds.update();                                           //sample and calculate
   Serial.print("[TDS Value= ");
-  Serial.print(gravityTds.getTdsValue());  //ppm
+  //Serial.print(gravityTds.getTdsValue());  //ppm
+  Serial.print(tdsValue);
   Serial.println("]");
-  nrf_encrypt(id_tdsValue, gravityTds.getTdsValue());
+  // nrf_encrypt(id_tdsValue, gravityTds.getTdsValue());
+  nrf_encrypt(id_tdsValue, tdsValue);
   delay(6);
 
   Serial.print("[pH= ");

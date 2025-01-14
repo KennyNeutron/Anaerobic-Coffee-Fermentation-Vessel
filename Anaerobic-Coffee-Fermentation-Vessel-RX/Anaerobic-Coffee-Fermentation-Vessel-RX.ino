@@ -140,7 +140,13 @@ void setup() {
 
   if (!nrf.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
+    while(1){
+      Serial.println("NRF ERROR!");
+    }
+  } else {
+    Serial.println("NRF24L01 Detected!");
   }
+
   //nrf.setChannel(115);
   nrf.setPALevel(RF24_PA_MAX);
   nrf.setDataRate(RF24_250KBPS);
@@ -188,7 +194,12 @@ void loop() {
     nrf.setDataRate(RF24_250KBPS);
     nrf.openReadingPipe(0, address);
     nrf.startListening();
-    Serial.println("change add");
+    Serial.println("change address:");
+    Serial.print((char)address[0]);
+    Serial.print((char)address[1]);
+    Serial.print((char)address[2]);
+    Serial.print((char)address[3]);
+    Serial.println((char)address[4]);
     show_string("Current Device: " + String(currentReceiver) + "             ", 550, 25, 2, ORANGE, BLACK, 0);
   }
 
@@ -274,7 +285,7 @@ void loop() {
     // if the file is available, write to it:
     if (dataFile) {
       dataFile.println("\n\n\n================================================");
-      dataFile.println("Device ID:"+ String(currentReceiver));
+      dataFile.println("Device ID:" + String(currentReceiver));
       dataFile.println("DS3231 Time: " + DS3231_getTimeString());
       dataFile.println("DS3231 Date: " + DS3231_getDateString());
       dataFile.println("Surface Temperature: " + String(SurfaceTemperature) + "degC");
@@ -297,4 +308,5 @@ void loop() {
   } else if (myRTC.getSecond() != 0) {
     loggingToggle = false;
   }
+
 }

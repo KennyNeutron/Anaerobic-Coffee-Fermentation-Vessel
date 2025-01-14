@@ -1,0 +1,7 @@
+{
+    "port": "COM8",
+    "configuration": "cpu=atmega328old",
+    "board": "arduino:avr:nano",
+    "programmer": "arduino:avrisp",
+    "sketch": "mg811_Calibration\\MG811_TestCalibration\\MG811_TestCalibration.ino"
+}
